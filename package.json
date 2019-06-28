@@ -1,0 +1,23 @@
+{
+  "name": "husky-cross-app-communicator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HuskyCrossAppCommunicator",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Christian-Lemos/HuskyCrossAppCommunicator.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Christian-Lemos/HuskyCrossAppCommunicator/issues"
+  },
+  "homepage": "https://github.com/Christian-Lemos/HuskyCrossAppCommunicator#readme",
+  "dependencies": {
+    "ip": "^1.1.5"
+  }
+}
