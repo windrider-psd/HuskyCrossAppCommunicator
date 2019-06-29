@@ -1,5 +1,6 @@
 let net = require('net');
 let ip = require('ip')
+let lodash = require('lodash')
 
 /**
  * @typedef {number} HuskyOperationType
@@ -14,7 +15,7 @@ let ip = require('ip')
  */
 let OPERATIONTYPE = {
     READ: 0,
-    WRITE : 1
+    WRITE: 1
 }
 
 /**
@@ -22,8 +23,8 @@ let OPERATIONTYPE = {
  */
 let RESPONSESTATUS = {
     OK: 0,
-    INVALID : 1,
-    ERROR : 2
+    INVALID: 1,
+    ERROR: 2
 }
 
 /**
@@ -34,6 +35,7 @@ let RESPONSESTATUS = {
 
 /**
  * @typedef HuskyCommand
+ * @property {Number} commandId
  * @property {String} commandPath
  * @property {Number} operationType
  * @property {String} arg
@@ -41,53 +43,130 @@ let RESPONSESTATUS = {
 
 /**
  * @typedef HuskyResponse
+ * @property {Number} commandId
  * @property {Number} responseStatus
  * @property {any} arg
  */
 
+/**
+ * @typedef WaitObject
+ * @property {Number} id
+ * @property {WriteCallback} callback
+ */
+
+/**
+ * @callback WriteCallback
+ * @param {Error} error
+ * @param {HuskyResponse} response
+ * @returns {void}
+ */
 
 
-class CrossAppCommunicator
-{
-    constructor(port)
-    {
+/**
+ * 
+ */
+class CrossAppCommunicator {
+    /**
+     * 
+     * @param {Number} port 
+     */
+    constructor(port) {
+        this.nextCommandId = 1;
+        /**
+         * @type {Array.<WaitObject>}
+         */
+        this.waitObjects = []
+
         this.client = new net.Socket();
+        this.conntected = false
         this.client.connect(port, ip.address(), () => {
-            
+
         })
+
         this.client.on('connect', () => {
-            let command = {
-                arg : '',
-                commandPath : "user",
-                operationType: OPERATIONTYPE.READ
-            };
-            this.client.write(JSON.stringify(command));
+            this.conntected = true
         })
+
+
         this.client.on('data', (data) => {
             let json = String(data);
             /**
              * @type {HuskyResponse}
              */
             let response = JSON.parse(json);
-            console.log(response);
-            response.arg.id = "Christian"
-            let command = {
-                arg : JSON.stringify(response.arg),
-                commandPath : "user",
-                operationType: OPERATIONTYPE.WRITE
-            };
-            this.client.write(JSON.stringify(command), () => {
-                console.log("Ending")
-                this.client.listeners = []
-                this.client.end();
-            });
 
-            
+            /**
+             * @type {Array.<WaitObject>}
+             */
+            let called = []
+            lodash.forEach(this.waitObjects, (w) => {
+                if (w.id == response.commandId) {
+                    called.push(w)
+                    w.callback(null, response)
+                }
+            })
+
+            lodash.remove(this.waitObjects, (w) => {
+                return called.includes(w, 0)
+            })
         })
+    }
+    /**
+     * 
+     * @param {String} commandPath 
+     * @param {OPERATIONTYPE} operationType 
+     * @param {any} arg 
+     * @param {WriteCallback} callback 
+     */
+    WriteCommand(commandPath, operationType, arg, callback) {
+
+        if (typeof (arg) == "undefined") {
+            callback(new Error("arg is undefined"), null)
+        }
+        else if (typeof (commandPath) != "string") {
+            callback(new Error("commandPath must be a string"), null)
+        }
+        else if (typeof (operationType) != "number") {
+            callback(new Error("operationType must be a number"), null)
+        }
+        else {
+
+            /**
+             * @type {String}
+             */
+            let argParam
+
+            if (typeof (arg) == "object") {
+                try {
+                    argParam = JSON.stringify(arg);
+                }
+                catch (err) {
+                    callback(err, null)
+                }
+            }
+            else {
+                argParam = String(arg)
+            }
+
+            /**
+             * @type {HuskyCommand}
+             */
+            let command = {
+                arg: argParam,
+                commandId: this.nextCommandId,
+                commandPath: commandPath,
+                operationType: operationType
+            }
+            this.waitObjects.push({ id: this.nextCommandId, callback: callback })
+            this.nextCommandId++
+            this.client.write(JSON.stringify(command))
+        }
     }
 }
 
-let communicator = new CrossAppCommunicator(42228);
 
-
-
+module.exports = {
+    OPERATIONTYPE: OPERATIONTYPE,
+    RESPONSESTATUS: RESPONSESTATUS,
+    CrossAppCommunicator: CrossAppCommunicator
+}
