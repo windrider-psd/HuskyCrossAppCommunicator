@@ -55,7 +55,7 @@ let MESSAGETYPE = {
  * @property {Number} commandId
  * @property {String} commandPath
  * @property {Number} operationType
- * @property {String} arg
+ * @property {any} arg
  */
 
 /**
@@ -140,12 +140,20 @@ class CrossAppCommunicator {
             this.client = client;
 
             this.client.on('data', (data) => {
-
+                
                 let json = String(data);
                 /**
-                 * @type {HuskyMessage}
-                 */
-                let message = JSON.parse(json);
+                * @type {HuskyMessage}
+                */
+                let message
+                try{
+                    message = JSON.parse(json);
+                }
+                catch(ex)
+                {
+                    return
+                }
+                
                 if (message.messageType == MESSAGETYPE.RESPONSE) {
                     /**
                      * @type {HuskyResponse}
@@ -170,9 +178,17 @@ class CrossAppCommunicator {
                      * @type {HuskyCommand}
                      */
                     let command = JSON.parse(message.arg)
-
+                    try
+                    {
+                        let arg = JSON.parse(command.arg)
+                        command.arg = arg;
+                    }
+                    catch(ex){
+                        console.log("ex")
+                    }
                     let called = false;
                     lodash.forEach(this.onCommandWaitObjects, (w) => {
+
                         if (w.commandPath == command.commandPath && w.operationType == command.operationType) {
 
                             let func = new WriteResponseFunction(command, this);
@@ -197,17 +213,25 @@ class CrossAppCommunicator {
                 }
             })
 
-            this.client.on('end', () => {
+            this.client.on('end', () =>
+             {
+                this.client.destroy();
                 this.client = null;
                 this.connected = false;
             })
             this.client.on('timeout', () => {
+                this.client.destroy();
                 this.client = null;
                 this.connected = false;
             })
             this.client.on('error', () => {
+                this.client.destroy();
                 this.client = null;
                 this.connected = false;
+            })
+
+            lodash.each(this.onReadyCallbacks, (r) => {
+                r();
             })
         })
     }
