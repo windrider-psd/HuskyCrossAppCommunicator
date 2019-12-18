@@ -168,10 +168,10 @@ class CrossAppCommunicator {
                 if (topicSplit[2] == 'new' && topicSplit[3] == 'subscribes') {
                     let obj = JSON.parse(packet.payload);
 
-                    if (obj.topic == `client/command`) {
+                    if (obj.topic == `java/command`) {
                         this.subCommand = true;
                     }
-                    if (obj.topic == `client/response`) {
+                    if (obj.topic == `java/response`) {
                         this.subResponse = true;
                     }
                     if (this.subCommand && this.subCommand) {
@@ -184,16 +184,14 @@ class CrossAppCommunicator {
                         {
                             this.readyBefore = true;
                         }
-                        
 
                         lodash.each(this.onReadyCallbacks, (r) => {
                             r();
                         })
                     }
-
                 }
             } catch (ex) {
-
+                console.log(ex);
             }
 
             let json = String(packet.payload);
@@ -254,7 +252,7 @@ class CrossAppCommunicator {
                     }
                     command.args = obj;
                 } catch (ex) {
-                    console.log("ex")
+                    console.log(ex)
                 }
                 let called = false;
                 lodash.forEach(this.onCommandWaitObjects, (w) => {
@@ -346,7 +344,7 @@ class CrossAppCommunicator {
             this.mosca.publish({
                 payload: JSON.stringify(message),
                // topic: "java/command",
-                topic : `client/command`,
+                topic : `java/command`,
                 qos: 1
             });
 
@@ -418,7 +416,7 @@ class CrossAppCommunicator {
         }
         this.mosca.publish({
             payload: JSON.stringify(message),
-            topic: "client/response"
+            topic: "java/response"
         });
     }
 
@@ -460,33 +458,38 @@ module.exports = {
     CrossAppCommunicator: CrossAppCommunicator
 }
 
+let c = new CrossAppCommunicator(961);
 
-/*let abc = new CrossAppCommunicator(1883);
 
-abc.OnReady(() => {
-    console.log("Ready")
-    abc.WriteCommand('pog', OPERATIONTYPE.READ, {user :"Chris", number : "1234"}, (err, response) => {
-        console.log("A response has been recieved")
+c.OnReady(() => {
+    console.log("ready")
 
-        console.log(err)
-        console.log(response)
-        console.log("-----------------")
-        abc.WriteCommand('pog', OPERATIONTYPE.READ, {user :"51", number : {user : "christian", password : "1234"}}, (err, response) => {
-            console.log("A response has been recieved")
     
-            console.log(err)
-            console.log(response)
-            console.log("-----------------")
-        })
+    /*c.WriteCommand('printa', OPERATIONTYPE.WRITE, {usuario: {nome: "christian", idade : 21}}, (err, resposta) =>{
+        if(err)
+        {
+            console.log("erro", err.message)
+        }
+        else
+        {
+            console.log(resposta)
+        }
     })
 
-    abc.OnCommand('pogu', OPERATIONTYPE.READ, false, (command, wr) => {
-        console.log("A command has been recieved")
-        console.log(command)
-        wr(RESPONSESTATUS.OK, {help : 123});
+    c.WriteCommand('printa', OPERATIONTYPE.WRITE, {name: "christian"}, (err, resposta) =>{
+        if(err)
+        {
+            console.log("erro", err.message)
+        }
+        else
+        {
+            console.log(resposta)
+        }
+    })*/
 
-        
+    c.OnCommand('pog', OPERATIONTYPE.READ, false, (command, writeResponse) => {
+        console.log(command.args);
+        writeResponse(RESPONSESTATUS.OK, "kakakakak");
+
     })
 })
-
-*/
