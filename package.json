@@ -19,7 +19,7 @@
   "homepage": "https://github.com/Christian-Lemos/HuskyCrossAppCommunicator#readme",
   "dependencies": {
     "ip": "^1.1.5",
-    "lodash": "^4.17.11",
+    "lodash": "^4.17.13",
     "mosca": "^2.8.3"
   }
 }
